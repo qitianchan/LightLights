@@ -1,0 +1,13 @@
+
+.light-list {
+    padding: 1.5em;
+    margin-top: 4em;
+    box-shadow: 2px 2px 11px #CCCBCB;
+    color: #666;
+    line-height: 1.8em;
+    font-size: 14px;
+}
+
+#light_new {
+    margin-bottom: 1.8em;
+}
