@@ -31,7 +31,7 @@ def switch_add():
     try:
         db.session.add(switch)
         db.session.commit()
-        return jsonifyReturn(message='添加{}成功'.format(switch.name), data={'switch': {'id': switch.id, 'name': switch.name,
+        return jsonifyReturn(message=u'添加{}成功'.format(switch.name), data={'switch': {'id': switch.id, 'name': switch.name,
                                               'eui': switch.eui, 'group_eui': switch.group_eui}})
     except IntegrityError as e:
         return jsonifyReturn(success=False, message=e.orig.message, status_code=422)
@@ -56,7 +56,7 @@ def switch_update():
             try:
                 db.session.add(switch)
                 db.session.commit()
-                return jsonifyReturn(message='更新{}成功'.format(switch.name), data={'switch': {'id': switch.id, 'name': switch.name,
+                return jsonifyReturn(message=u'更新 {} 成功'.format(switch.name), data={'switch': {'id': switch.id, 'name': switch.name,
                                                       'eui': switch.eui, 'group_eui': switch.group_eui}})
             except IntegrityError as e:
                 return jsonifyReturn(success=False, message=e.orig.message, status_code=422)
