@@ -23,10 +23,10 @@
         <a class="navbar-brand" href="#">LLight</a>
         <ul class="nav navbar-nav">
           <li class="nav-item active">
-            <a class="nav-link" href="#">Lights <span class="sr-only">(current)</span></a>
+            <a class="nav-link" href="{{url_for('light.light_list')}}">Lights <span class="sr-only">(current)</span></a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Switchs</a>
+            <a class="nav-link" href="{{ url_for('switch.switch_list') }}">Switchs</a>
           </li>
         </ul>
       </div>

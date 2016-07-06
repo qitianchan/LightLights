@@ -2,13 +2,6 @@
  * Created by admin on 2016/7/5 0005.
  */
 $(document).ready(function(){
-    //var table = $('#lights').DataTable();
-    //$('#lights tbody').on('click', 'a.edit', function(){
-    //    var data = table.row(this.parent).data();
-    //    alert( 'You clicked on '+data[0]+'\'s row' );
-    //    oTable = $('#lighhts').dataTable()
-    //    oTable
-    //});
     function restoreRow(oTable, nRow) {
         var aData = oTable.fnGetData(nRow);
         var jqTds = $('>td', nRow);
@@ -25,7 +18,7 @@ $(document).ready(function(){
         var jqTds = $('>td', nRow);
         jqTds[0].innerHTML = '<input type="text" class="form-control small" value="' + aData[0] + '">';
         jqTds[1].innerHTML = '<input type="text" class="form-control small" value="' + aData[1] + '">';
-        //jqTds[2].innerHTML = '<input type="text" class="form-control small" value="' + aData[2] + '">';
+        jqTds[2].innerHTML = '<input type="text" class="form-control small" value="' + aData[2] + '">';
         jqTds[3].innerHTML = '<a class=" btn btn-sm btn-primary edit" href="" style="margin-right: 0.5em;">保存</a>' + '<a class=" btn btn-sm btn-danger cancel" href="">放弃</a>';
     }
 
@@ -33,16 +26,17 @@ $(document).ready(function(){
 
         var data = {};
         var jqInputs = $('input', nRow);
-        data.identifier = jqInputs[0].value;
+        data.name = jqInputs[0].value;
         data.eui = jqInputs[1].value;
+        data.group_eui = jqInputs[2].value;
         var url = window.location.href;
 
         // update row
-        if($(nRow).data('light-id') !== undefined) {
-            data.light_id = $(nRow).data('light-id');
-            url = url.substr(0, url.lastIndexOf('/')) + '/light/update';
+        if($(nRow).data('switch-id') !== undefined) {
+            data.switch_id = $(nRow).data('switch-id');
+            url = url.substr(0, url.lastIndexOf('/')) + '/switch/update';
         }else {
-            url = url.substr(0, url.lastIndexOf('/'))+ '/light/add';
+            url = url.substr(0, url.lastIndexOf('/'))+ '/switch/add';
         }
 
         $.ajax({
@@ -50,15 +44,14 @@ $(document).ready(function(){
             type: 'post',
             data: data,
             success: function(res){
-                toastr.success('添加成功');
-                $(nRow).data('light-id', res.data.light.id);
+                toastr.success(res.message);
+                $(nRow).data('switch-id', res.data.switch.id);
                 var jqInputs = $('input', nRow);
-                oTable.fnUpdate(res.data.light.identifier, nRow, 0, false);
-                oTable.fnUpdate(res.data.light.eui, nRow, 1, false);
-                oTable.fnUpdate(res.data.light.status + '(' + res.data.light.on_count +')', nRow, 2, false);
+                oTable.fnUpdate(res.data.switch.name, nRow, 0, false);
+                oTable.fnUpdate(res.data.switch.eui, nRow, 1, false);
+                oTable.fnUpdate(res.data.switch.group_eui, nRow, 2, false);
                 oTable.fnUpdate('<a class="edit" href="">编辑</a>', nRow, 3, false);
                 oTable.fnUpdate('<a class="delete" href="">删除</a>', nRow, 4, false);
-                oTable.fnUpdate('<a class="reset" href="">重置</a>', nRow, 5, false);
                 oTable.fnDraw();
                 nEditing = null;
 
@@ -94,34 +87,34 @@ $(document).ready(function(){
 
     var nEditing = null;
 
-    $('#light_new').click(function (e) {
+    $('#switch_new').click(function (e) {
         e.preventDefault();
         var aiNew = oTable.fnAddData(['', '', '',
-            '<a class="edit" href="">编辑</a>','<a class="cancel" data-mode="new" href="">删除</a>', '<a class="reset" href="">重置</a>'
+            '<a class="edit" href="">编辑</a>','<a class="cancel" data-mode="new" href="">删除</a>'
         ]);
         var nRow = oTable.fnGetNodes(aiNew[0]);
         editRow(oTable, nRow);
         nEditing = nRow;
     });
 
-    $('#lights').on('click', 'a.delete', function (e) {
+    $('#switchs').on('click', 'a.delete', function (e) {
         e.preventDefault();
 
         if (confirm("确定要删除吗?") == false) {
             return;
         }
         var nRow = $(this).parents('tr')[0];
-         if($(nRow).data('light-id') !== undefined) {
-                var light_id = $(nRow).data('light-id');
+         if($(nRow).data('switch-id') !== undefined) {
+                var switch_id = $(nRow).data('switch-id');
          }
 
         var url = window.location.href;
-        url = url.substr(0, url.lastIndexOf('/')) + '/light/delete';
+        url = url.substr(0, url.lastIndexOf('/')) + '/switch/delete';
 
         $.ajax({
             url: url,
             type: 'post',
-            data: {light_id: light_id},
+            data: {switch_id: switch_id},
             success: function(res){
                 toastr.success(res.message);
                 oTable.fnDeleteRow(nRow);
@@ -132,7 +125,7 @@ $(document).ready(function(){
         });
     });
 
-    $('#lights').on('click','a.cancel', function (e) {
+    $('#switchs').on('click','a.cancel', function (e) {
         e.preventDefault();
         if ($(this).attr("data-mode") == "new") {
             var nRow = $(this).parents('tr')[0];
@@ -143,7 +136,7 @@ $(document).ready(function(){
         }
     });
 
-    $('#lights').on('click', 'a.edit', function (e) {
+    $('#switchs').on('click', 'a.edit', function (e) {
         e.preventDefault();
 
         /* Get the row as a parent of the link that was clicked ` */
@@ -165,19 +158,19 @@ $(document).ready(function(){
         }
     });
 
-    $('#lights').on('click', 'a.reset', function(e){
+    $('#switchs').on('click', 'a.reset', function(e){
         e.preventDefault();
         var nRow = $(this).parents('tr')[0];
-        if($(nRow).data('light-id') !== undefined) {
-            var light_id = $(nRow).data('light-id');
-            var url = window.location.href.substr(0, window.location.href.lastIndexOf('/')) + '/light/reset';
+        if($(nRow).data('switch-id') !== undefined) {
+            var switch_id = $(nRow).data('switch-id');
+            var url = window.location.href.substr(0, window.location.href.lastIndexOf('/')) + '/switch/reset';
             $.ajax({
             url: url,
             type: 'post',
-            data: {light_id: light_id},
+            data: {switch_id: switch_id},
             success: function(res){
                 toastr.success(res.message);
-                oTable.fnUpdate(res.data.light.status + '(' + res.data.light.on_count +')', nRow, 2, false);
+                oTable.fnUpdate(res.data.switch.status + '(' + res.data.switch.on_count +')', nRow, 2, false);
             },
             error: function(res){
                 toastr.success(res.responseJSON.message);
