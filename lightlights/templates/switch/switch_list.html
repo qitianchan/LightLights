@@ -25,10 +25,11 @@
             <td>{{switch.name}}</td>
             <td>{{switch.eui}}</td>
             <td>{{switch.group_eui}}</td>
-            <td><a href="javascript:;" class="edit">编辑</a></td>
+            <!--<td><a href="javascript:;" class="edit">编辑</a></td>-->
+            <td><a href="{{url_for('switch.edit', switch_id=switch.id )}}">编辑</a></td>
             <td><a href="javascript:;" class="delete">删除</a></td>
           </tr>
-          {% endfor%}
+          {% endfor %}
           </tbody>
         </table>
       </div>

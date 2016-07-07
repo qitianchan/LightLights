@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+{% block container %}
+  <h1>Switch Edit</h1>
+  <div class="container">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3>heading</h3>
+      </div>
+      <div class="panel-body">
+        <form id="switch-update" method="post" action="{{url_for('switch.update', switch_id=switch.id)}}">
+          <div class="form-group">
+            <label for="name">按键名</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ switch.name }}">
+          </div>
+          <div class="form-group">
+            <label for="eui">EUI</label>
+            <input type="text" class="form-control" id="eui" name="eui" value="{{ switch.eui }}">
+          </div>
+          <div class="form-group">
+            <label for="groupEUI">groupEUI</label>
+            <input type="text" class="form-control" id="groupEUI" name="groupEUI" value="{{ switch.group_eui }}">
+          </div>
+          <hr>
+          <div class="form-group">
+            <h4>控制的灯</h4>
+            <div class="light-check-area">
+              {% for light in lights %}
+                <label class="light-checkbox">
+                <input type="checkbox" name="lights" value="{{ light.id }}" {% if light.checked %} checked {% endif %}>{{ light.identifier }}
+                </label>
+              {% endfor %}
+              <div class="clearfix"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit">提交</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block javascripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/edit_switch.js') }}"></script>
+{% endblock %}

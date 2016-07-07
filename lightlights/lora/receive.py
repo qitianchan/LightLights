@@ -16,7 +16,7 @@ APP_EUI = DefaultConfig.LORA_APP_EUI
 TOKEN = DefaultConfig.LORA_TOKEN
 PORT = DefaultConfig.LORA_PORT
 
-socketio_cli = SocketIO(host=HOST, port=PORT, params={'app_eui': APP_EUI, 'token': TOKEN})
+# socketio_cli = SocketIO(host=HOST, port=PORT, params={'app_eui': APP_EUI, 'token': TOKEN})
 
 def ws_listening():
     userver_thread = Thread(target=userver_listening)

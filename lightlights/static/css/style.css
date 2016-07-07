@@ -14,3 +14,15 @@
 .new-btn {
     margin-bottom: 1.8em;
 }
+
+.light-check-area {
+    /*margin: 0.8em 1.5em;*/
+    padding: 0.8em 2em;
+    background-color: #F8F8F8;
+    border: 1px solid #CCCBCB;
+    border-radius: 4px;
+}
+.light-checkbox {
+    width: 120px;
+    float: left;
+}

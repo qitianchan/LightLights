@@ -4,6 +4,7 @@ from lightlights.switch.model import Switch
 from lightlights.utils import jsonifyReturn
 from lightlights.extentions import csrf, db
 from sqlalchemy.exc import IntegrityError
+from lightlights.lights.model import Light
 
 switch = Blueprint('switch', __name__)
 
@@ -12,6 +13,36 @@ switch = Blueprint('switch', __name__)
 def switch_list():
     switchs = Switch.get_switches()
     return render_template('switch/switch_list.html', switchs=switchs)
+
+
+@switch.route('/<switch_id>/edit')
+@csrf.exempt
+def edit(switch_id):
+    switch = Switch.get(switch_id)
+    lights = Light.get_lights()
+    bind_lights = switch.lights
+    for bind in bind_lights:
+        for light in lights:
+            if light.id == bind.id:
+                if not hasattr(light, 'checked'):
+                    light.checked = True
+            else:
+                if not hasattr(light, 'checked'):
+                    light.checked = False
+
+    if switch:
+        return render_template('switch/edit_switch.html', switch=switch, lights=lights)
+
+
+@switch.route('/<switch_id>/update', methods=['post'])
+@csrf.exempt
+def update(switch_id):
+    lights = request.form.getlist('lights')
+    name = request.form.get('name')
+    eui = request.form.get('eui')
+    group_eui = request.form.get('groupEUI')
+
+    return 'hello'
 
 
 @switch.route('/switch/add', methods=['POST'])

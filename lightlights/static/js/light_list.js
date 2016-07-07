@@ -71,7 +71,7 @@ $(document).ready(function(){
         });
     }
 
-    var oTable = $('#switchs').dataTable({
+    var oTable = $('#lights').dataTable({
         "aLengthMenu": [
             [5, 15, 20, -1],
             [5, 15, 20, "All"] // change per page values here
