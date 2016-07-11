@@ -8,6 +8,7 @@ class Switch(db.Model):
     name = db.Column(db.String(64), nullable=True)
     eui = db.Column(db.String(64), nullable=False, unique=True)                     # 设备EUI,用于接收消息
     group_eui = db.Column(db.String(64), nullable=False, unique=True)               # 组播EUI,用于发送开关命令
+    on = db.Column(db.Integer, default=0)                                            # 0：关， 1：开
 
 
     @classmethod

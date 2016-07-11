@@ -26,9 +26,6 @@ def edit(switch_id):
             if light.id == bind.id:
                 if not hasattr(light, 'checked'):
                     light.checked = True
-            else:
-                if not hasattr(light, 'checked'):
-                    light.checked = False
 
     if switch:
         return render_template('switch/edit_switch.html', switch=switch, lights=lights)
@@ -38,11 +35,19 @@ def edit(switch_id):
 @csrf.exempt
 def update(switch_id):
     lights = request.form.getlist('lights')
-    name = request.form.get('name')
-    eui = request.form.get('eui')
-    group_eui = request.form.get('groupEUI')
+    switch = Switch.get(switch_id)
+    switch.name = request.form.get('name')
+    switch.eui = request.form.get('eui')
+    switch.group_eui = request.form.get('groupEUI')
 
-    return 'hello'
+    switch.lights = []
+    for light_id in lights:
+        light = Light.get(int(light_id))
+        if light:
+            switch.lights.append(light)
+    db.session.add(switch)
+    db.session.commit()
+    return 'sd'
 
 
 @switch.route('/switch/add', methods=['POST'])
