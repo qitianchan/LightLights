@@ -8,12 +8,39 @@ from datetime import datetime
 from lightlights.extentions import socketio
 from flask_socketio import emit
 from flask import current_app
+import time
 from socketIO_client import SocketIO, BaseNamespace
 from threading import Thread
+from lightlights.config import DefaultConfig
 
 import logging
 logging.getLogger('requests').setLevel(logging.WARNING)
 logging.basicConfig(level=logging.DEBUG)
+
+msg_format = logging.Formatter('%(asctime)s:%(name)s:%(levelname)s:%(message)s' )
+message_logger = logging.getLogger('message')
+message_logger.setLevel(logging.DEBUG)
+option_logger = logging.getLogger('option')
+
+option_logger.setLevel(logging.DEBUG)
+
+f_opt_handle = logging.FileHandler(DefaultConfig.OPT_FILE_LOG)
+f_opt_handle.setLevel(logging.INFO)
+f_opt_handle.setFormatter(msg_format)
+
+f_handle = logging.FileHandler(DefaultConfig.MSG_FILE_LOG)
+f_handle.setLevel(logging.INFO)
+f_handle.setFormatter(msg_format)
+
+s_handle = logging.StreamHandler()
+s_handle.setLevel(logging.DEBUG)
+s_handle.setFormatter(msg_format)
+
+message_logger.addHandler(f_handle)
+message_logger.addHandler(s_handle)
+option_logger.addHandler(f_opt_handle)
+option_logger.addHandler(s_handle)
+
 
 HOST = DefaultConfig.LORA_HOST
 APP_EUI = DefaultConfig.LORA_APP_EUI
@@ -38,6 +65,45 @@ def userver_listening():
     except Exception as e:
         ws_listening()
 
+class Switch():
+    def __init__(self, switch_eui, status):
+        self.switch_eui = switch_eui
+        self.status = status
+
+
+class LightsManager(object):
+
+    def __init__(self, namespace):
+        self.namespace = namespace
+
+    def turn_off(self, lights_eui):
+        for eui in lights_eui:
+            option_logger.info('Turn_off:send tx: {0}: {1}'.format(eui, json.dumps(self._get_off_data_format(eui))))
+            self.namespace.emit('tx', self._get_off_data_format(eui))
+
+    def turn_on(self, lights_eui):
+        for eui in lights_eui:
+            option_logger.info('Turn_on:send tx: {0}: {1}'.format(eui, json.dumps(self._get_off_data_format(eui))))
+            self.namespace.emit('tx', self._get_on_data_format(eui))
+
+    def _get_off_data_format(self, eui):
+         return {
+            'cmd': 'tx',
+            'EUI': eui,
+            'port': 2,
+            'rx_window': 2,
+            'data': '00'
+         }
+
+    def _get_on_data_format(self, eui):
+        return {
+            'cmd': 'tx',
+            'EUI': eui,
+            'port': 2,
+            'rx_window': 2,
+            'data': '07'
+        }
+
 
 class Switchor(object):
     """
@@ -59,6 +125,7 @@ class Switchor(object):
         self.euis = euis
         self.namespace = namespace
         self.data = data
+
 
     def turn_on_off_by_group(self):
         # todo: 发送动态组播信息
@@ -114,14 +181,39 @@ class TestNamespace(BaseNamespace):
             :return:
             """
             print(message)
+            message_logger.info('Get message: {}'.format(message))
+            start = time.time()
+
             cx = sqlite3.connect(DefaultConfig.DATABASE_PATH)
             if not isinstance(message, dict):
                 message = json.loads(message)
             # if t['h'] and t['data'][0:8] == '0027a208':
             if not hasattr(message, 'h'):
 
+                manager = LightsManager(self)
+                if is_switch_on(cx, message.get('EUI')):
+                    # 关闭电灯
+                    lights_eui = []
+                    for info in get_lights_info(cx, message.get('EUI')):
+
+                        if not get_light_on_count(cx, info[0]):           # 如果是0，电灯状态改变（发送一个信号，转到反转当前状态）
+                            lights_eui.append(info[0])
+                    manager.turn_off(lights_eui)
+                    option_logger.info('关闭电灯开关为{0}'.format(message.get('EUI')))
+                else:
+                    # 发送所有对应灯的启动信号
+                    manager.turn_on(get_lights_eui(cx, message.get('EUI')))
+                    option_logger.info('打开电灯开关为{0}'.format(message.get('EUI')))
+
                 # 更改开关状态
                 alter_switch_status(cx, message.get('EUI'))
+                if is_switch_on(cx, message.get('EUI')):
+                    option_logger.info('改变开关状态:{0}->{1}'.format('OFF', 'ON'))
+
+                else:
+                    option_logger.info('改变开关状态:{0}->{1}'.format('ON', 'OFF'))
+
+
 
                 # 对数据分析，收到开关的信息时，判断当前的状态，如果对应电灯的on_count是0，on_count++， 如果on_count 为1
                 lights_eui = []
@@ -129,16 +221,16 @@ class TestNamespace(BaseNamespace):
 
                     if not get_light_on_count(cx, info[0]):           # 如果是0，电灯状态改变（发送一个信号，转到反转当前状态）
                         lights_eui.append(info[0])
-
-                # TODO 发送数据
-                # global socketio_cli
-                swicthor = Switchor(lights_eui, self)
-                swicthor.turn_on_off_one_by_one()
-
                 print('发送成功')
+                option_logger.info('Duration: {}s'.format(time.time() - start))
                 # TODO:更新灯的数据
-                # print('发送组播', swicthor._get_sending_data())
 
+
+def is_switch_on(cx, switch_eui):
+    exe = 'SELECT "on" FROM switchs ' \
+          'WHERE eui = "{}"'.format(switch_eui)
+
+    return int(cx.execute(exe).fetchone()[0])
 
 def get_euis(cx):
     exe = 'SELECT eui FROM switchs'
@@ -170,6 +262,7 @@ def alter_switch_status(cx, switch_eui):
     cx.execute(exe)
     cx.commit()
 
+
 def get_lights_info(cx, switch_eui):
     """
     获取开关对应的电灯信息
@@ -190,8 +283,14 @@ def get_light_on_count(cx, light_eui):
     :return:
     """
     exe = 'SELECT SUM("on") FROM switchs WHERE id IN ' \
-          '(SELECT switch_id FROM ltsw_association WHERE light_id = (SELECT id FROM lights WHERE eui="{}"))'.format(light_eui)
+          '(SELECT switch_id FROM ltsw_association WHERE switch_id = (SELECT id FROM switchs WHERE eui="{}"))'.format(light_eui)
     return cx.execute(exe).fetchone()[0]
+
+
+def get_lights_eui(cx, switch_eui):
+    exe = 'SELECT eui FROM lights WHERE id IN ' \
+          '(SELECT light_id FROM ltsw_association WHERE switch_id = (SELECT id FROM switchs WHERE eui="{}"))'.format(switch_eui)
+    return [eui[0] for eui in cx.execute(exe).fetchall()]
 
 
 def on_act_tx(msg):
@@ -220,7 +319,8 @@ if __name__ == '__main__':
     # print('emit')
     # socketio_cli.wait(100)
     cx = sqlite3.connect(DefaultConfig.DATABASE_PATH)
-    print(get_group_eui(cx, 'DEFIEDFFEASSF'))
-    print(get_lights_info(cx, '3530353460358D0B'))
+    # print(get_group_eui(cx, 'DEFIEDFFEASSF'))
+    # print(get_lights_info(cx, '3530353460358D0B'))
     print(get_light_on_count(cx, '3530353460358D0B'))
-    print(alter_switch_status(cx, '3530353460358D0B'))
+    # print(alter_switch_status(cx, '3530353460358D0B'))
+    # print(is_switch_on(cx, '3530353460358D0B'))

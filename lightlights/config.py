@@ -94,3 +94,6 @@ class DefaultConfig(object):
     LORA_PORT = 8100
     NAMESPACE_PATH = '/test'
 
+    # logs
+    MSG_FILE_LOG = os.path.join(_basedir, 'lightlights/logs/message.log')
+    OPT_FILE_LOG = os.path.join(_basedir, 'lightlights/logs/option.log')

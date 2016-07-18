@@ -2,8 +2,6 @@
 import logging
 async_mode = None
 
-async_mode = None
-
 if async_mode is None:
     try:
         import eventlet
@@ -74,18 +72,13 @@ def configure_extensions(app):
 
 thread = None
 def init_app(app):
-    logging.info('init_app')
-    @app.before_first_request
-    def before_first_request():
-        try:
-            global thread
-            if thread is None:
-                ws_listening()
-        except Exception as e:
-            raise e
+    # 监听消息
+    logging.info('Begin listen message.')
+    ws_listening()
+
 
 if __name__ == '__main__':
     app = create_app()
     app.debug = True
-    # socketio.run(app, host='183.230.40.230', port=8077)
-    socketio.run(app, host='127.0.0.1', port=8077)
+    # socketio.run(app, host='183.230.40.230', port=8077, use_reloader=False)
+    socketio.run(app, host='127.0.0.1', port=8077, use_reloader=False)
